@@ -263,6 +263,22 @@ function handleImageUpload(event) {
     if (file) reader.readAsDataURL(file);
 }
 
+// Populate product data into form inputs for editing
+function editProduct(dbKey) {
+    const prod = products.find(p => p.dbKey === dbKey);
+    if (!prod) return;
+    
+    document.getElementById('product-id').value = prod.dbKey;
+    document.getElementById('prod-code').value = prod.code;
+    document.getElementById('prod-name').value = prod.name;
+    document.getElementById('prod-price').value = prod.price;
+    document.getElementById('prod-img').value = prod.img;
+    document.getElementById('prod-status').value = prod.status;
+    
+    document.getElementById('form-title').innerText = "Edit " + prod.code;
+    document.getElementById('adminModal').style.display = "flex";
+}
+
 // Secure data modifier containing admin passphrase validation
 function saveProduct(e) {
     e.preventDefault();
@@ -341,3 +357,4 @@ function clearForm() {
     document.getElementById('form-title').innerText = "Add Product";
     uploadedImageBase64 = "";
 }
+
