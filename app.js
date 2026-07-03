@@ -1,4 +1,4 @@
-// --- PASTE YOUR FIREBASE CREDENTIALS HERE ---
+// --- FIREBASE LIVE ENVIRONMENT CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyAA60xkGygpG9no7Qbq3xsxpCO5hupDHPE",
   authDomain: "my-earings-85407.firebaseapp.com",
@@ -19,7 +19,7 @@ let isAdmin = false;
 let selectedCategoryFilter = "In Stock"; 
 const WHATSAPP_NUMBER = "918778096977";
 
-// Run structural evaluation variables immediately on module startup
+// Check if URL contains '?manage=true' to load Admin features
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('manage') === 'true') {
     isAdmin = true;
@@ -31,7 +31,7 @@ if (urlParams.get('manage') === 'true') {
     document.getElementById('chip-InStock').classList.add('active');
 }
 
-// Database real-time stream sync channel
+// Real-time Database stream mapping logic
 database.ref('products').on('value', (snapshot) => {
     document.getElementById('loading-indicator').style.display = 'none';
     const data = snapshot.val();
@@ -46,6 +46,7 @@ database.ref('products').on('value', (snapshot) => {
     alert("Database Connection Issue detected.");
 });
 
+// Render the storefront UI grids dynamically 
 function filterStore() {
     const searchQuery = document.getElementById('search-box').value.toLowerCase().trim();
     const container = document.getElementById('products-container');
@@ -111,6 +112,7 @@ function filterStore() {
     });
 }
 
+// Category filter chip controller
 function selectCategory(category, element) {
     selectedCategoryFilter = category;
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
@@ -118,6 +120,7 @@ function selectCategory(category, element) {
     filterStore();
 }
 
+// Shopping cart items manager
 function addToCart(dbKey) {
     const distinctItemsCount = Object.keys(shoppingCart).length;
     
@@ -138,6 +141,7 @@ function addToCart(dbKey) {
     updateCartUI();
 }
 
+// Drawer dynamic incrementers and decrementers
 function changeQty(dbKey, delta) {
     if (!shoppingCart[dbKey]) return;
     
@@ -154,6 +158,7 @@ function changeQty(dbKey, delta) {
     renderCartDrawer();
 }
 
+// Update totals on sticky screen overlay elements
 function updateCartUI() {
     const bar = document.getElementById('cart-sticky-bar');
     const uniqueKeys = Object.keys(shoppingCart);
@@ -193,6 +198,7 @@ function closeCartDrawer(e) {
     }
 }
 
+// Build list objects inside HTML cart overlay element
 function renderCartDrawer() {
     const container = document.getElementById('cart-items-container');
     container.innerHTML = '';
@@ -226,6 +232,7 @@ function renderCartDrawer() {
     });
 }
 
+// Compile items string layout block and redirect execution sequence directly to WhatsApp App Link
 function checkoutToWhatsApp() {
     let messageText = "Hi, I want to order from *Jeevan fansy jewellery Stall*:\n\n";
     Object.keys(shoppingCart).forEach((key, idx) => {
@@ -238,12 +245,13 @@ function checkoutToWhatsApp() {
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(messageText)}`, '_blank');
 }
 
+// Layout visibility components
 function openAdminPopup() { clearForm(); document.getElementById('adminModal').style.display = "flex"; }
-// Corrected to reset on modal action cancellations
 function closeAdminPopup() { document.getElementById('adminModal').style.display = "none"; clearForm(); }
 function openLightbox(imgSrc) { document.getElementById('modalImg').src = imgSrc; document.getElementById('imageModal').style.display = "flex"; }
 function closeLightbox() { document.getElementById('imageModal').style.display = "none"; }
 
+// Handle image conversions locally
 let uploadedImageBase64 = "";
 function handleImageUpload(event) {
     const file = event.target.files[0];
@@ -255,6 +263,7 @@ function handleImageUpload(event) {
     if (file) reader.readAsDataURL(file);
 }
 
+// Secure data modifier containing admin passphrase validation
 function saveProduct(e) {
     e.preventDefault();
     const dbKey = document.getElementById('product-id').value;
@@ -267,43 +276,65 @@ function saveProduct(e) {
     if (img === "Local Image Loaded") img = uploadedImageBase64;
     if (!code) code = "EA-" + Math.floor(10 + Math.random() * 90);
 
+    // Prompt user for authentication confirmation
+    const userPass = prompt("Enter Admin Password to save changes:");
+    if (!userPass) {
+        alert("Action cancelled. Password is required.");
+        return;
+    }
+
     const productPayload = { code, name, price, img, status, updatedTime: Date.now() };
 
     const successCallback = () => {
         document.getElementById('adminModal').style.display = "none";
         clearForm();
+        alert("Product saved successfully!");
     };
 
     const failureCallback = (err) => {
-        alert("Action unsuccessful. Check configurations.");
+        console.error(err);
+        alert("Action unsuccessful! Verify your password configuration or network properties.");
     };
 
-    if (dbKey) {
-        database.ref('products/' + dbKey).set(productPayload).then(successCallback).catch(failureCallback);
-    } else {
-        database.ref('products').push(productPayload).then(successCallback).catch(failureCallback);
-    }
+    // Verify key against firebase authentication security database tab rules node
+    database.ref('admin_pass').once('value').then((snapshot) => {
+        if (snapshot.val() === userPass) {
+            if (dbKey) {
+                database.ref('products/' + dbKey).set(productPayload).then(successCallback).catch(failureCallback);
+            } else {
+                database.ref('products').push(productPayload).then(successCallback).catch(failureCallback);
+            }
+        } else {
+            alert("Incorrect password! Access Denied.");
+        }
+    }).catch((err) => {
+        alert("Error connecting to database security check node: " + err.message);
+    });
 }
 
-function editProduct(dbKey) {
-    const prod = products.find(p => p.dbKey === dbKey);
-    document.getElementById('product-id').value = prod.dbKey;
-    document.getElementById('prod-code').value = prod.code;
-    document.getElementById('prod-name').value = prod.name;
-    document.getElementById('prod-price').value = prod.price;
-    document.getElementById('prod-img').value = prod.img;
-    document.getElementById('prod-status').value = prod.status;
-    
-    document.getElementById('form-title').innerText = "Edit " + prod.code;
-    document.getElementById('adminModal').style.display = "flex";
-}
-
+// Secure document object removal procedure
 function deleteProduct(dbKey) {
-    if(confirm("Permanently delete this item?")) {
-        database.ref('products/' + dbKey).remove();
+    if (confirm("Permanently delete this item?")) {
+        const userPass = prompt("Enter Admin Password to confirm deletion:");
+        if (!userPass) return;
+
+        database.ref('admin_pass').once('value').then((snapshot) => {
+            if (snapshot.val() === userPass) {
+                database.ref('products/' + dbKey).remove().then(() => {
+                    alert("Product deleted successfully!");
+                }).catch((err) => {
+                    alert("Delete failed: " + err.message);
+                });
+            } else {
+                alert("Incorrect password! Access Denied.");
+            }
+        }).catch((err) => {
+            alert("Authentication error: " + err.message);
+        });
     }
 }
 
+// Clear memory cache profiles inside form input scopes
 function clearForm() {
     document.getElementById('product-form').reset();
     document.getElementById('product-id').value = "";
