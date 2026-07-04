@@ -22,6 +22,7 @@ const WHATSAPP_NUMBER = "918778096977";
 let uploadedImagesArray = []; // Holds items structured as "thumbnailData*hdData"
 let displayLimit = 4; 
 let isScrollLoading = false;
+let currentSortState = "none"; // Options: "none", "highToLow", "lowToHigh"
 
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('manage') === 'true') {
@@ -94,12 +95,30 @@ function filterStore() {
     const container = document.getElementById('products-container');
     container.innerHTML = '';
 
-    const filtered = products.filter(p => {
+    // Filter logic
+    let filtered = products.filter(p => {
         if (selectedCategoryFilter !== "All" && p.status !== selectedCategoryFilter) return false;
         const matchesName = p.name ? p.name.toLowerCase().includes(searchQuery) : false;
         const matchesCode = p.code ? p.code.toLowerCase().includes(searchQuery) : false;
         return searchQuery === "" || matchesName || matchesCode;
     });
+
+    // Added: Dynamic Sort Array Interceptor Pipeline
+    if (currentSortState === "highToLow") {
+        filtered.sort((a, b) => {
+            let priceA = parseFloat(String(a.price || '0').replace(/[^0-9.]/g, '')) || 0;
+            let priceB = parseFloat(String(b.price || '0').replace(/[^0-9.]/g, '')) || 0;
+            return priceB - priceA;
+        });
+    } else if (currentSortState === "lowToHigh") {
+        filtered.sort((a, b) => {
+            let priceA = parseFloat(String(a.price || '0').replace(/[^0-9.]/g, '')) || 0;
+            let priceB = parseFloat(String(b.price || '0').replace(/[^0-9.]/g, '')) || 0;
+            return priceA - priceB;
+        });
+    }
+
+
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="loading" style="grid-column: span 2;">No products found.</div>';
@@ -496,3 +515,33 @@ function clearForm() {
     uploadedImagesArray = [];
     document.getElementById('admin-preview-wrapper').innerHTML = '';
 }
+function togglePriceSort() {
+    const btn = document.getElementById('sort-toggle-btn');
+    
+    if (currentSortState === "none") {
+        currentSortState = "highToLow";
+        btn.innerHTML = "Price: High ➔ Low ⬇️";
+        btn.style.backgroundColor = "var(--primary)";
+        btn.style.color = "white";
+    } else if (currentSortState === "highToLow") {
+        currentSortState = "lowToHigh";
+        btn.innerHTML = "Price: Low ➔ High ⬆️";
+        btn.style.backgroundColor = "var(--primary)";
+        btn.style.color = "white";
+    } else {
+        currentSortState = "none";
+        btn.innerHTML = "Sort Price ↕️";
+        btn.style.backgroundColor = "#e2e8f0";
+        btn.style.color = "#475569";
+    }
+    
+    displayLimit = 4; // reset pagination viewport limit
+    filterStore();
+}
+
+// Initialize the sort button baseline text safely when the DOM loads or script boots up
+document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById('sort-toggle-btn');
+    if(btn) btn.innerHTML = "Sort Price ↕️";
+});
+
