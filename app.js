@@ -17,7 +17,7 @@ let products = [];
 let shoppingCart = {}; 
 let isAdmin = false;
 let selectedCategoryFilter = "In Stock"; 
-const WHATSAPP_NUMBER = "918778096977";
+const WHATSAPP_NUMBER = "919342721847";
 
 let uploadedImagesArray = []; // Holds items structured as "thumbnailData*hdData"
 let currentSortState = "none"; // Options: "none", "highToLow", "lowToHigh"
