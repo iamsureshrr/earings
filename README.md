@@ -1,2 +1,2 @@
-# earings
-just an static shopping site
+# SMJ - Store
+Order using whatsapp
